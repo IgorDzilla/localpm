@@ -13,7 +13,6 @@ ldflags=["-s"]
 [packages."fmt@10.2.1"]
 name="fmt"
 version="10.2.1"
-source={ type="registry", url="https://registry.localpm.io", package="fmt", rev="10.2.1" }
 integrity={ tarball_sha256="9f..cd" }
 
 [packages."demo@0.1.0"]

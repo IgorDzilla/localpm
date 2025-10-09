@@ -44,7 +44,10 @@ class LockfileParser {
 
 	std::optional<Compiler> parse_compiler();
 	Project parse_project();
-	std::optional<std::vector<Package>> parse_packages();
+	std::optional<std::unordered_map<std::string, Package>> parse_packages();
+	// std::optional<Source> parse_source();
+	// std::optional<Integrity> parse_integrity();
+	// std::optional<Dependency> parse_dependecy();
 	void parse();
 
   public:
@@ -54,4 +57,5 @@ class LockfileParser {
 	const Compiler &get_compiler();
 	const Project &get_project();
 	const std::int64_t get_schema() const noexcept;
+	void debug_print();
 };

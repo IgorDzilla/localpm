@@ -4,7 +4,7 @@ int main(void) {
 	std::cout << "TEST IN PROGRESS\n";
 	LockfileParser parser("sample.toml");
 
-	std::cout << parser.get_schema() << std::endl;
+	parser.debug_print();
 
 	return 0;
 }
