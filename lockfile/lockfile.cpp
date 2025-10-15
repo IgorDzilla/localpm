@@ -2,6 +2,7 @@
 #include "lockfile_structure.hpp"
 #include "tomlplusplus/toml.hpp"
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 LockfileParser::LockfileParser(std::string filepath) : filepath_(filepath) {
@@ -34,17 +35,19 @@ std::optional<Compiler> LockfileParser::parse_compiler() {
 	}
 
 	if (auto arr = node["cflags"].as_array()) {
-		compiler.cflags.reserve(arr->size());
+		compiler.cflags = std::vector<std::string>();
+		compiler.cflags->reserve(arr->size());
 		for (auto &&n : *arr)
 			if (auto s = n.value<std::string>())
-				compiler.cflags.emplace_back(std::move(*s));
+				compiler.cflags->emplace_back(std::move(*s));
 	}
 
 	if (auto arr = node["ldflags"].as_array()) {
-		compiler.ldflags.reserve(arr->size());
+
+		compiler.ldflags->reserve(arr->size());
 		for (auto &&n : *arr)
 			if (auto s = n.value<std::string>())
-				compiler.ldflags.emplace_back(std::move(*s));
+				compiler.ldflags->emplace_back(std::move(*s));
 	}
 
 	return compiler;
@@ -76,92 +79,88 @@ Project LockfileParser::parse_project() {
 	return project;
 }
 
+static
+
+	// WARNING: Will be a router to functions fot parsing different types of
+	// Source Now only LocalSource is implimented
+	std::optional<Source>
+	LockfileParser::parse_source(toml::table package_table, SrcType type) {}
+
+static LibKind parse_kind_string(const std::string &s) {
+	if (s == "header-only")
+		return LibKind::HeaderOnly;
+	if (s == "static")
+		return LibKind::Static;
+	if (s == "shared")
+		return LibKind::Shared;
+	if (s == "abi")
+		return LibKind::Abi;
+
+	throw LockfileError("Uknown packages[].kind: " + s,
+						LockfileErrorCode::INVALID_VALUE);
+}
+
+static SrcType parse_type_string(const std::string &s) {
+	if (s == "local")
+		return SrcType::Local;
+	if (s == "git")
+		return SrcType::Git;
+	if (s == "vendor")
+		return SrcType::Vendor;
+	if (s == "archive")
+		return SrcType::Archive;
+
+	throw LockfileError("Uknown packages[].type: " + s,
+						LockfileErrorCode::INVALID_VALUE);
+}
+
 std::optional<std::unordered_map<std::string, Package>>
 LockfileParser::parse_packages() {
-	auto *pkg_table = tbl_["packages"].as_table();
-	if (!pkg_table)
+	auto *arr = tbl_["packages"].as_array();
+	if (!arr) {
 		return std::nullopt;
-	else if (!pkg_table || !pkg_table->as_table())
-		throw LockfileError("[packages] must be a table",
-							LockfileErrorCode::INVALID_VALUE);
+	}
 
 	std::unordered_map<std::string, Package> packages;
 
-	for (auto &&[k, node] : *pkg_table) {
-
-		std::string id = std::string(k.str());
-
-		auto *pt = node.as_table();
-		if (!pt)
-			throw LockfileError("Each [packages.\"...\"] must be a table.",
+	for (auto &&node : *arr) {
+		const auto *package_table = node.as_table();
+		if (package_table->is_table()) {
+			throw LockfileError("Each [package] must be a table.",
 								LockfileErrorCode::INVALID_VALUE);
-
-		// add auto parse from key later
-		auto name = pt->at_path("name").value_or(std::string{});
-		auto version = pt->at_path("version").value_or(std::string{});
-		// source = { ... }  (inline-table)
-		std::optional<Source> source;
-		if (auto s = pt->get("source")) {
-			auto *st = s->as_table();
-			if (!st)
-				throw std::runtime_error("package.source must be a table");
-
-			auto type = st->at_path("type").value_or(std::string{});
-
-			if (type == "local") {
-				LocalSource ls{.path =
-								   st->at_path("path").value_or(std::string{})};
-				source = std::move(ls);
-			} else if (!type.empty()) {
-				throw std::runtime_error("Unknown source.type: " + type);
-			}
 		}
 
-		// integrity = { tarball_sha256="..." }
-		std::optional<Integrity> integrity;
-		if (auto in = pt->get("integrity")) {
-			auto *it = in->as_table();
-			if (!it)
-				throw std::runtime_error("package.integrity must be a table");
-			Integrity integ;
-			if (auto h = it->at_path("tarball_sha256").value<std::string>())
-				integ.tarball_sha256 = *h;
-			integrity = std::move(integ);
-		}
-
-		// dependencies = [ { ... }, { ... } ]
-		std::optional<std::vector<Dependency>> deps = std::nullopt;
-		if (auto dn = pt->get("dependencies")) {
-			auto *arr = dn->as_array();
-			if (!arr)
-				throw std::runtime_error(
-					"package.dependencies must be an array");
-			for (auto &&item : *arr) {
-				auto *dt = item.as_table();
-				if (!dt)
-					throw std::runtime_error(
-						"dependency entry must be a table");
-				Dependency d;
-				d.name = dt->at_path("name").value_or(std::string{});
-				d.constraint =
-					dt->at_path("constraint").value_or(std::string{});
-				if (auto r = dt->at_path("resolved").value<std::string>())
-					d.resolved = *r;
-				deps->push_back(std::move(d));
-			}
-		}
-
-		// Сложи в свою структуру Package и положи куда нужно (map, вектор и
-		// т.п.)
 		Package p;
-		p.id = id;
-		p.name = std::move(name);
-		p.version = std::move(version);
-		p.source = std::move(source);
-		p.integrity = std::move(integrity);
-		p.dependencies = std::move(deps);
 
-		packages[id] = p;
+		// Parsing simple fields of package
+		auto name = package_table->at_path("name").value<std::string>();
+		if (!name) {
+			throw LockfileError("Field [packages.*].name is missing.",
+								LockfileErrorCode::FIELD_MISSING);
+		}
+		p.name = *name;
+
+		auto version = package_table->at_path("version").value<std::string>();
+		if (!version) {
+			throw LockfileError("Field [packages.*].version is missing.",
+								LockfileErrorCode::FIELD_MISSING);
+		}
+		p.version = *version;
+
+		auto type = package_table->at_path("type").value<std::string>();
+		if (!type) {
+			throw LockfileError("Field [packages.*].type is missing");
+		}
+		p.type = parse_type_string(*type);
+
+		auto kind = package_table->at_path("kind").value<std::string>();
+		if (!type) {
+			throw LockfileError("Field [packages.*].kind is missing");
+		}
+		p.kind = parse_kind_string(*kind);
+		// end of parsing simple fields of package
+
+		// Parsing inline table Source
 	}
 
 	return packages;

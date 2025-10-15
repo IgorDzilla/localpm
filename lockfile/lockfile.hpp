@@ -40,14 +40,14 @@ class LockfileParser {
 	std::string filepath_;
 	toml::table tbl_;
 
-	Lockfile lockfile_;
+	Lockfile lockfile_ = Lockfile();
 
 	std::optional<Compiler> parse_compiler();
 	Project parse_project();
 	std::optional<std::unordered_map<std::string, Package>> parse_packages();
-	// std::optional<Source> parse_source();
-	// std::optional<Integrity> parse_integrity();
-	// std::optional<Dependency> parse_dependecy();
+	std::optional<Source> parse_source(toml::table, SrcType);
+	std::optional<Integrity> parse_integrity(toml::table);
+	std::optional<Dependency> parse_dependecy(toml::table);
 	void parse();
 
   public:
