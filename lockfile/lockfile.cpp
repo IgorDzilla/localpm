@@ -24,7 +24,7 @@ std::optional<Compiler> LockfileParser::parse_compiler() {
 		return std::nullopt;
 	}
 
-	Compiler compiler;
+	Compiler compiler = Compiler();
 
 	if (auto s = node["cc"].value<std::string>())
 		compiler.cc = std::move(*s);
@@ -189,36 +189,4 @@ void LockfileParser::parse() {
 
 const std::int64_t LockfileParser::get_schema() const noexcept {
 	return lockfile_.schema;
-}
-
-void LockfileParser::debug_print() {
-	std::cout << "[lockfile]" << std::endl;
-	std::cout << "\t" << lockfile_.schema << std::endl;
-	std::cout << "\n[project]\n";
-	std::cout << "\t" << lockfile_.project.name << "\n";
-	std::cout << "\t" << lockfile_.project.version << "\n";
-	if (lockfile_.project.compiler) {
-		std::cout << "\t[project.compiler]\n";
-		std::cout << "\t\t" << lockfile_.project.compiler->cc << std::endl;
-		for (auto &s : lockfile_.project.compiler->cflags)
-			std::cout << "\t\t" << s << std::endl;
-		for (auto &s : lockfile_.project.compiler->ldflags)
-			std::cout << "\t\t" << s << std::endl;
-	}
-
-	if (lockfile_.packages) {
-		for (auto &&pair : lockfile_.packages.value()) {
-			std::cout << "[packages." << pair.first << "]\n";
-			std::cout << "\t\t" << pair.second.name << "\n";
-			std::cout << "\t\t" << pair.second.id << "\n";
-			std::cout << "\t\t" << pair.second.version << "\n";
-			if (pair.second.dependencies) {
-				std::cout << "\t\t[dependencies]\n";
-				for (auto &dep : pair.second.dependencies.value()) {
-					std::cout << "\t\t\t" << dep.name << std::endl;
-					std::cout << "\t\t\t" << dep.constraint << std::endl;
-				}
-			}
-		}
-	}
 }

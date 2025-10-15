@@ -8,14 +8,18 @@
 
 struct Compiler {
 	std::string cc;
-	std::vector<std::string> cflags;
-	std::vector<std::string> ldflags;
+	std::optional<std::vector<std::string>> cflags;
+	std::optional<std::vector<std::string>> ldflags;
+
+	Compiler();
 };
 
 struct Project {
 	std::string name;
 	std::string version;
 	std::optional<Compiler> compiler;
+
+	Project();
 };
 
 /* Package sources */
@@ -34,12 +38,16 @@ struct Project {
 
 struct LocalSource {
 	std::string path; // ./vendor/fmt
+
+	LocalSource();
 };
 
 using Source = std::variant<LocalSource>;
 
 struct Integrity {
 	std::optional<std::string> tarball_sha256;
+
+	Integrity();
 };
 
 // зависимость внутри пакета
@@ -47,6 +55,8 @@ struct Dependency {
 	std::string name;					 // fmt
 	std::string constraint;				 // ^10.2
 	std::optional<std::string> resolved; // 10.2.1
+
+	Dependency();
 };
 
 struct Package {
@@ -56,6 +66,8 @@ struct Package {
 	std::optional<Source> source;
 	std::optional<Integrity> integrity;
 	std::optional<std::vector<Dependency>> dependencies;
+
+	explicit Package();
 };
 
 // Got a class that parses and holds everything in place. Do not know if this
@@ -65,4 +77,6 @@ struct Lockfile {
 	Project project;
 	// packages по ключу секции ("fmt@10.2.1", "demo@0.1.0" и т.п.)
 	std::optional<std::unordered_map<std::string, Package>> packages;
+
+	Lockfile();
 };
