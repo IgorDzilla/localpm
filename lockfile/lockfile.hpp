@@ -45,9 +45,9 @@ class LockfileParser {
 	std::optional<Compiler> parse_compiler();
 	Project parse_project();
 	std::optional<std::unordered_map<std::string, Package>> parse_packages();
-	std::optional<Source> parse_source(toml::table, SrcType);
-	std::optional<Integrity> parse_integrity(toml::table);
-	std::optional<Dependency> parse_dependecy(toml::table);
+	Source parse_source(toml::table, SrcType);
+	Integrity parse_integrity(toml::table);
+	Dependency parse_dependency(toml::table);
 	void parse();
 
   public:

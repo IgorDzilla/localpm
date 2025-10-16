@@ -21,11 +21,13 @@ integrity={ tarball_sha256="9f..cd" }
 [[packages]]
 name="demo"
 version="0.1.0"
-type = "shared"
-dependencies=[ { name="fmt", constraint="^10.2", resolved="10.2.1" } ]
+kind = "shared"
+type = "local"
+dependencies=[ { name="fmt", version="^10.2", resolved="10.2.1" } ]
 
 [[packages]]
 name="some-lib"
 version="latest"
-type = "header-only"
+type = "local"
+kind = "header-only"
 

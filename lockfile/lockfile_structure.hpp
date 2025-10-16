@@ -67,21 +67,15 @@ struct Dependency {
 	explicit Dependency() = default;
 };
 
-enum class LibKind {
-	Undefined = -1,
-	HeaderOnly = 0,
-	Static = 1,
-	Shared = 2,
-	Abi = 3
-};
+enum class LibKind { AutoDefined, HeaderOnly, Static, Shared, Abi };
 
-enum class SrcType { Undefined, Local, Git, Vendor, Archive };
+enum class SrcType { Local, Git, Regsirty, Archive, Folder };
 
 struct Package {
 	std::string name = {};	  // "fmt"
 	std::string version = {}; // "10.2.1"
-	SrcType type = SrcType::Undefined;
-	LibKind kind = LibKind::Undefined;
+	std::optional<SrcType> type = std::nullopt;
+	std::optional<LibKind> kind = std::nullopt;
 	std::optional<Source> source = std::nullopt;
 	std::optional<Integrity> integrity = std::nullopt;
 	std::optional<std::vector<Dependency>> dependencies = std::nullopt;
@@ -104,6 +98,8 @@ struct Lockfile {
 /* Auxiliary functions */
 inline const char *lib_kind_to_string(LibKind kind) {
 	switch (kind) {
+	case LibKind::AutoDefined:
+		return "auto-defined";
 	case LibKind::HeaderOnly:
 		return "header-only";
 	case LibKind::Static:
@@ -123,10 +119,12 @@ inline const char *src_type_to_string(SrcType type) {
 		return "local";
 	case SrcType::Git:
 		return "git";
-	case SrcType::Vendor:
-		return "vendor";
+	case SrcType::Regsirty:
+		return "registry";
 	case SrcType::Archive:
 		return "archive";
+	case SrcType::Folder:
+		return "folder";
 	default:
 		throw std::runtime_error("Uknown SrcType");
 	}
