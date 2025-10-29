@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/kozelskijigor/Programming/localpm/cli/build",
+  "command": "/usr/bin/c++  -isystem /Users/kozelskijigor/Programming/localpm/cli/build/_deps/cli11-src/include -g -std=gnu++17 -arch arm64 -o CMakeFiles/cli11-hello.dir/src/main.cpp.o -c /Users/kozelskijigor/Programming/localpm/cli/src/main.cpp",
+  "file": "/Users/kozelskijigor/Programming/localpm/cli/src/main.cpp",
+  "output": "CMakeFiles/cli11-hello.dir/src/main.cpp.o"
+}
+]
