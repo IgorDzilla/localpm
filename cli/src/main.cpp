@@ -3,8 +3,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "localpm/cli/commands_all.hpp"
-#include "localpm/cli/registry.hpp"
+#include "commands_all.hpp"
+#include "registry.hpp"
 
 using namespace localpm::cli;
 
