@@ -45,15 +45,17 @@ This component serves as the front-end for all developer-facing actions such as 
 #### Using CMake
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j
-./build/localpm --help
+mkdir -p build
+cd build
+cmake ..
+make
+./localpm --help
 ```
 
 #### Manual Compilation
 
 ```bash
-clang++ -std=c++20 -Wall -Wextra -Wpedantic \
+clang++ -std=c++17 -Wall -Wextra -Wpedantic \
   -Iinclude -Iexternal/CLI11/include \
   src/main.cpp -o localpm
 ```
@@ -63,7 +65,7 @@ clang++ -std=c++20 -Wall -Wextra -Wpedantic \
 ### Code Formatting
 
 ```bash
-clang-format -i src/*.cpp include/localpm/cli/**/*.hpp
+clang-format -i src/*.cpp include/**/*.hpp
 ```
 
 ---
@@ -143,7 +145,7 @@ Here’s a minimal command implementation you can copy to start a new command:
 
 ```cpp
 #pragma once
-#include "localpm/cli/registry.hpp"
+#include "registry.hpp"
 #include <CLI/CLI.hpp>
 #include <iostream>
 
@@ -185,13 +187,13 @@ REGISTER_COMMAND(localpm::cli::RemoveCommand);
 ### Registration and Inclusion
 
 After creating your `*.hpp` file, include it in
-`include/localpm/cli/commands_all.hpp`:
+`include/commands_all.hpp`:
 
 ```cpp
 #pragma once
-#include "localpm/cli/commands/add.hpp"
-#include "localpm/cli/commands/init.hpp"
-#include "localpm/cli/commands/remove.hpp"  // <-- new command
+#include "commands/add.hpp"
+#include "commands/init.hpp"
+#include "commands/remove.hpp"  // <-- new command
 ```
 
 That’s all — no edits to `main.cpp` are needed.
@@ -215,7 +217,7 @@ Your command will automatically appear in `--help` output and behave as a proper
 CLIParse/
 ├─ CMakeLists.txt
 ├─ src/main.cpp
-├─ include/localpm/cli/
+├─ include/
 │  ├─ registry.hpp
 │  ├─ commands/
 │  │  ├─ add.hpp
@@ -231,7 +233,7 @@ CLIParse/
 ## Dependencies
 
 * **CLI11** — header-only CLI parser
-* **C++20 STL** — `filesystem`, `unordered_map`, `unique_ptr`, etc.
+* **C++17 STL** — `filesystem`, `unordered_map`, `unique_ptr`, etc.
 * No runtime dependencies.
 
 ---
