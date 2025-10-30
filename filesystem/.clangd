@@ -1,0 +1,10 @@
+CompileFlags:
+  # где лежит compile_commands.json
+  CompilationDatabase: build
+
+Index:
+  Background: Build        # индексируем в фоне
+  StandardLibrary: Yes     # индексируем STL
+
+# Включить автодобавление include при автокомплите
+HeaderInsertion: iwyu
