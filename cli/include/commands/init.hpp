@@ -35,5 +35,5 @@ private:
 
 } // namespace localpm::cli
 
-// Автоматическая регистрация
-REGISTER_COMMAND(localpm::cli::InitCommand);
+inline const bool registered_init =
+    localpm::cli::CommandRegistry::instance().register_type<localpm::cli::InitCommand>();

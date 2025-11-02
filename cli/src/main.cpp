@@ -12,16 +12,16 @@ int main(int argc, char **argv) {
   CLI::App app{"LocalPM — Local Package Manager for C/C++"};
   app.require_subcommand(1); // min one subcommand
 
-  // Глобальные флаги
+  // Global flags
   std::string config_path;
   bool verbose = false;
   app.add_option("-c, --config", config_path, "Path to config file");
-  app.add_flag("-v, --verbose", verbose, "Подробный вывод");
+  app.add_flag("-v, --verbose", verbose, "Verbose output");
 
   // create commands and get it subcommands
   auto commands = CommandRegistry::instance().instantiate_all();
 
-  std::unordered_map<CLI::App *, Command *> sub_to_cmd;
+  std::unordered_map<CLI::App*, Command*> sub_to_cmd;
 
   for (auto &cmd_ptr : commands) {
     auto *raw = cmd_ptr.get();
@@ -29,8 +29,7 @@ int main(int argc, char **argv) {
 
     // if cmd need personal options compile it in subcommand
     raw->configure(*sub);
-    sub_to_cmd.emplace(sub,
-                       raw); // push elem if key new and unique, else - error
+    sub_to_cmd.emplace(sub, raw); // push elem if key new and unique, else - error
   }
 
   try {

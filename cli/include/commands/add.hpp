@@ -1,7 +1,8 @@
-
 #pragma once
 #include "registry.hpp"
 #include <CLI/CLI.hpp>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 
 namespace localpm::cli {
@@ -14,18 +15,33 @@ public:
   }
 
   void configure(CLI::App &sub) override {
-    sub.add_option("name", name_, "Имя пакета")->required();
-    sub.add_option("-v,--version", version_, "Версия (семвер)")
+    sub.add_option("name", name_, "Name of package")->required();
+    sub.add_option("-v,--version", version_, "version")
         ->default_val("latest");
-    sub.add_option("--source", source_, "Источник (local|vendor|git)")
+    sub.add_option("--source", source_, "Source (local|vendor|git)")
         ->default_val("local");
-    sub.add_option("--path", path_, "Путь для source=local");
-    sub.add_option("--url", url_, "URL для source=git / vendor");
-    sub.add_flag("--replace", replace_, "Заменить, если уже существует");
+    sub.add_option("--path", path_, "Path to source=local");
+    sub.add_option("--url", url_, "URL for source=git / vendor");
+    sub.add_flag("--replace", replace_, "Replace package");
   }
 
   int run() override {
-    // Здесь можно дернуть слой домена/индекса, который ты уже проектировал.
+    namespace fs = std::filesystem;
+    fs::path db = fs::current_path() / "packages.txt";
+
+    // open file
+    std::ofstream out(db, std::ios::app);
+    if (!out) {
+        std::cerr << "[error] cannot open " << db << " for writing\n";
+        return 1;
+    }
+
+    // пишем данные в файл
+    out << name_ << " " << version_ << " " << source_
+        << " " << (path_.empty() ? "-" : path_)
+        << " " << (url_.empty() ? "-" : url_)
+        << " " << (replace_ ? "replace" : "keep")
+        << "\n";
     std::cout << "Add: name=" << name_ << " version=" << version_
               << " source=" << source_
               << (path_.empty() ? "" : " path=" + path_)
@@ -45,4 +61,5 @@ private:
 
 } // namespace localpm::cli
 
-REGISTER_COMMAND(localpm::cli::AddCommand);
+inline const bool registered_add =
+    localpm::cli::CommandRegistry::instance().register_type<localpm::cli::AddCommand>();
