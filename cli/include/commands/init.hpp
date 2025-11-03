@@ -1,6 +1,6 @@
 
 #pragma once
-#include "localpm/cli/registry.hpp"
+#include "registry.hpp"
 #include <CLI/CLI.hpp>
 #include <filesystem>
 #include <iostream>
@@ -35,5 +35,5 @@ private:
 
 } // namespace localpm::cli
 
-// Автоматическая регистрация
-REGISTER_COMMAND(localpm::cli::InitCommand);
+inline const bool registered_init =
+    localpm::cli::CommandRegistry::instance().register_type<localpm::cli::InitCommand>();

@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace CLI {
-class App;
+	class App;
 }
 
 namespace localpm::cli {
@@ -28,9 +28,11 @@ public:
     return inst;
   }
 
-  void add_factory(Factory f) {
+  template<typename T>
+  bool register_type() {
     std::lock_guard<std::mutex> lk(mu_); // block
-    factories_.push_back(std::move(f));
+    factories_.push_back(&CommandRegistry::factory<T>);
+    return true;
   }
 
   std::vector<std::unique_ptr<Command>> instantiate_all() const {
@@ -43,23 +45,14 @@ public:
   }
 
 private:
-  mutable std::mutex mu_;
-  std::vector<Factory> factories_;
-};
+	template<typename T>
+	static std::unique_ptr<Command> factory() {
+	    return std::make_unique<T>();
+	}
 
-// Регистратор загрузки команд
-template <typename T> struct Registrar {
-  explicit Registrar() {
-    CommandRegistry::instance().add_factory(
-        [] { return std::make_unique<T>(); });
-  }
+	mutable std::mutex mu_;
+	std::vector<Factory> factories_;
 };
 
 } // namespace localpm::cli
 
-// Макрос для удобной регистрации команд
-// ---------- макрос с безопасной генерацией уникального имени ----------
-#define LP_JOIN_IMPL(x, y) x##y
-#define LP_JOIN(x, y) LP_JOIN_IMPL(x, y)
-#define REGISTER_COMMAND(CmdType)                                              \
-  static ::localpm::cli::Registrar<CmdType> LP_JOIN(_lp_registrar_instance_, __COUNTER__)
