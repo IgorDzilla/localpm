@@ -1,0 +1,8 @@
+# .clang-format
+BasedOnStyle: LLVM         # or Google, Chromium, etc.
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Always             # or ForIndentation if you want tabs only for leading indents
+# (optional) Avoid surprises if the file isn’t found:
+# FallbackStyle: none

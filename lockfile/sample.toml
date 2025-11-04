@@ -1,0 +1,33 @@
+[lockfile]
+schema = 1
+
+[project]
+name = "demo"
+version = "0.1.0"
+
+[project.compiler]
+cc="gcc-14"
+cflags=["-O3","-Wall"]
+ldflags=["-s"]
+
+[[packages]]
+name="fmt"
+version="10.2.1"
+kind = "static"
+type = "local"
+source = {path="some/path/to/lib"}
+integrity={ tarball_sha256="9f..cd" }
+
+[[packages]]
+name="demo"
+version="0.1.0"
+kind = "shared"
+type = "local"
+dependencies=[ { name="fmt", version="^10.2", resolved="10.2.1" } ]
+
+[[packages]]
+name="some-lib"
+version="latest"
+type = "local"
+kind = "header-only"
+

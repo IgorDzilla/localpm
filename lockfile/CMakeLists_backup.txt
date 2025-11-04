@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.16)
+
+# Fetch tomlplusplus library
+include(FetchContent)
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+)
+FetchContent_MakeAvailable(tomlplusplus)
+
+# Create lockfile library
+add_library(lockfile
+    lockfile.cpp
+    lockfile.hpp
+    lockfile_structure.hpp
+)
+
+target_include_directories(lockfile PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(lockfile PUBLIC
+    tomlplusplus::tomlplusplus
+)
+
+target_compile_features(lockfile PUBLIC cxx_std_17)
+
+if (MSVC)
+    target_compile_options(lockfile PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(lockfile PRIVATE -Wall -Wextra -Wpedantic)
+endif()
