@@ -15,9 +15,9 @@ public:
   }
 
   void configure(CLI::App &sub) override {
+    std::cout << "Hello from AddCommand\n";
     sub.add_option("name", name_, "Name of package")->required();
-    sub.add_option("-v,--version", version_, "version")
-        ->default_val("latest");
+    sub.add_option("-v,--version", version_, "version")->default_val("latest");
     sub.add_option("--source", source_, "Source (local|vendor|git)")
         ->default_val("local");
     sub.add_option("--path", path_, "Path to source=local");
@@ -32,16 +32,14 @@ public:
     // open file
     std::ofstream out(db, std::ios::app);
     if (!out) {
-        std::cerr << "[error] cannot open " << db << " for writing\n";
-        return 1;
+      std::cerr << "[error] cannot open " << db << " for writing\n";
+      return 1;
     }
 
     // пишем данные в файл
-    out << name_ << " " << version_ << " " << source_
-        << " " << (path_.empty() ? "-" : path_)
-        << " " << (url_.empty() ? "-" : url_)
-        << " " << (replace_ ? "replace" : "keep")
-        << "\n";
+    out << name_ << " " << version_ << " " << source_ << " "
+        << (path_.empty() ? "-" : path_) << " " << (url_.empty() ? "-" : url_)
+        << " " << (replace_ ? "replace" : "keep") << "\n";
     std::cout << "Add: name=" << name_ << " version=" << version_
               << " source=" << source_
               << (path_.empty() ? "" : " path=" + path_)
@@ -61,5 +59,7 @@ private:
 
 } // namespace localpm::cli
 
+// Вносит себя в регистр
 inline const bool registered_add =
-    localpm::cli::CommandRegistry::instance().register_type<localpm::cli::AddCommand>();
+    localpm::cli::CommandRegistry::instance()
+        .register_type<localpm::cli::AddCommand>();

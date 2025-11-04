@@ -1,12 +1,12 @@
 #pragma once
-#include <functional>
+#include <functional> // Integral equations
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 
 namespace CLI {
-	class App;
+class App;
 }
 
 namespace localpm::cli {
@@ -24,12 +24,13 @@ public:
   using Factory = std::function<std::unique_ptr<Command>()>;
 
   static CommandRegistry &instance() {
+    // static внутри функции имеет область видимости функции
+    // но при этом область жизни у него бесконечная
     static CommandRegistry inst;
     return inst;
   }
 
-  template<typename T>
-  bool register_type() {
+  template <typename T> bool register_type() {
     std::lock_guard<std::mutex> lk(mu_); // block
     factories_.push_back(&CommandRegistry::factory<T>);
     return true;
@@ -45,14 +46,12 @@ public:
   }
 
 private:
-	template<typename T>
-	static std::unique_ptr<Command> factory() {
-	    return std::make_unique<T>();
-	}
+  template <typename T> static std::unique_ptr<Command> factory() {
+    return std::make_unique<T>();
+  }
 
-	mutable std::mutex mu_;
-	std::vector<Factory> factories_;
+  mutable std::mutex mu_;
+  std::vector<Factory> factories_;
 };
 
 } // namespace localpm::cli
-
