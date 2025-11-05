@@ -4,7 +4,29 @@ project(localpm LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- compile commands ---
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CC_DIRS
+  "${CMAKE_SOURCE_DIR}"
+  "${CMAKE_SOURCE_DIR}/cli"
+  "${CMAKE_SOURCE_DIR}/lockfile"
+)
+
+add_custom_target(cc-symlinks ALL
+  COMMENT "Create symlinks to build/compile_commands.json"
+)
+
+foreach(dir IN LISTS CC_DIRS)
+  add_custom_command(TARGET cc-symlinks POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${dir}"
+    COMMAND ${CMAKE_COMMAND} -E rm -f "${dir}/compile_commands.json"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_BINARY_DIR}/compile_commands.json"
+            "${dir}/compile_commands.json"
+    )
+endforeach()
+# --- compile commands ---
 
 # Output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")

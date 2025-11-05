@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Fetch CLI11 library
 include(FetchContent)
 FetchContent_Declare(

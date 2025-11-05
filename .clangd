@@ -1,0 +1,33 @@
+# .clangd (в корне репозитория)
+CompileFlags:
+  # Где лежит compile_commands.json
+  CompilationDatabase: build
+  # Доп. флаги к тем, что в compile_commands.json (опционально)
+  Add: [-Wall, -Wextra, -Wpedantic]
+# На случай, если для какого-то файла нет записи в compile_commands.json
+
+Index:
+  Background: Build   # строить индекс в фоне
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    # Подключить набор правил (работают, если clang-tidy установлен)
+    Add: [bugprone-*, performance-*, modernize-*, readability-*]
+    # Примеры отключений (под себя)
+    Remove: [cppcoreguidelines-avoid-magic-numbers]
+
+Completion:
+  AllScopes: true     # подсказки из всех областей видимости
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+# Если clangd ругается на «unknown driver», подскажите, какие компиляторы можно дергать:
+QueryDriver:
+  - /usr/bin/clang*
+  - /usr/bin/g++*
+  - /usr/bin/gcc*
+
