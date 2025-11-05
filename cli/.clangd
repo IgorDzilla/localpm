@@ -1,2 +1,9 @@
 CompileFlags:
-  CompilationDatabase: build
+  CompilationDatabase: ../build
+  Add: 
+    - -I../cli/include/
+    - -I../cli/include/commands/
+    - -I../cli/_deps/cli11-src/include/
+    - -I../lockfile/include/
+    - -I../build/_deps/tomlplusplus-src/include/
+    - -I../src/include/logger/

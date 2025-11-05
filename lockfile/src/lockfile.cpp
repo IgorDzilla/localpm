@@ -1,25 +1,49 @@
 #include "lockfile.hpp"
 #include "lockfile_structure.hpp"
+#include "logger/logger.hpp"
 #include "tomlplusplus/toml.hpp"
+#include <filesystem>
+#include <fstream>
+#include <ios>
 #include <optional>
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-LockfileParser::LockfileParser(std::string filepath) : filepath_(filepath) {
-	try {
-		tbl_ = toml::parse_file(filepath_);
-	} catch (const toml::parse_error &err) {
-		throw LockfileError(err.what(), LockfileErrorCode::TOML_PARSE_ERROR);
-	}
+using namespace localpm::filesys;
 
-	try {
-		parse();
-	} catch (const LockfileError &err) {
-		throw err;
+const std::string schema_template = std::string{"schema"};
+
+const std::string basic_schema = std::string{R"SCHEMA([lockfile]
+													  schema = 0
+													  
+													  [project]
+													  name = <name>
+	                                                  version = "0.1.0"
+
+													  [project.compiler]
+													  cc = "g++17")SCHEMA"};
+
+LockfileProcessor ::LockfileProcessor(std::string &filepath, size_t schema)
+	: filepath_(filepath), schema_(schema) {
+	if (FILE *file = fopen(filepath_.c_str(), "r")) {
+		LOG_INFO("Lockfile found.");
+		get_table_from_file();
 	}
 }
 
-std::optional<Compiler> LockfileParser::parse_compiler() {
+void LockfileProcessor::get_table_from_file() {
+	try {
+		tbl_ = toml::parse_file(filepath_);
+	} catch (const toml::parse_error &err) {
+		LOG_ERROR("Lockfile reading failed.");
+		throw LockfileError(err.what(), LockfileErrorCode::TOML_PARSE_ERROR);
+	}
+	LOG_INFO("Successfully read lockfile");
+}
+
+std::optional<Compiler> LockfileProcessor ::parse_compiler() {
 	auto node = tbl_["project"]["compiler"];
 	if (!node || !node.is_table()) {
 		return std::nullopt;
@@ -54,7 +78,7 @@ std::optional<Compiler> LockfileParser::parse_compiler() {
 }
 
 /* Parse the project table */
-Project LockfileParser::parse_project() {
+Project LockfileProcessor::parse_project() {
 	auto node = tbl_["project"];
 	if (!node || !node.is_table())
 		throw LockfileError("Table [project] is missng.",
@@ -78,7 +102,7 @@ Project LockfileParser::parse_project() {
 	return project;
 }
 
-Integrity LockfileParser::parse_integrity(toml::table int_tbl) {
+Integrity LockfileProcessor::parse_integrity(toml::table int_tbl) {
 	Integrity integrity;
 	if (auto sha = int_tbl["tarball_sha256"]) {
 		if (!sha.is_string())
@@ -92,7 +116,7 @@ Integrity LockfileParser::parse_integrity(toml::table int_tbl) {
 	return integrity;
 }
 
-Dependency LockfileParser::parse_dependency(toml::table dep_tbl) {
+Dependency LockfileProcessor::parse_dependency(toml::table dep_tbl) {
 	Dependency dependency;
 
 	auto name = dep_tbl["name"];
@@ -134,45 +158,56 @@ Dependency LockfileParser::parse_dependency(toml::table dep_tbl) {
 
 // WARNING: Will be a router to functions fot parsing different types of
 // Source Now only LocalSource is implimented
-Source LockfileParser::parse_source(toml::table package_table, SrcType type) {
+Source LockfileProcessor::parse_source(toml::table package_table,
+									   SrcType type) {
 	return LocalSource();
 }
 
 static LibKind parse_kind_string(const std::string &s) {
 	// std::cout << "\t->" << s << std::endl;
-	if (s == "auto-defined")
+	if (s == "auto-defined") {
 		return LibKind::AutoDefined;
-	if (s == "header-only")
+	}
+	if (s == "header-only") {
 		return LibKind::HeaderOnly;
-	if (s == "static")
+	}
+	if (s == "static") {
 		return LibKind::Static;
-	if (s == "shared")
+	}
+	if (s == "shared") {
 		return LibKind::Shared;
-	if (s == "abi")
+	}
+	if (s == "abi") {
 		return LibKind::Abi;
+	}
 
 	throw LockfileError("Uknown packages[].kind: " + s,
 						LockfileErrorCode::INVALID_VALUE);
 }
 
 static SrcType parse_type_string(const std::string &s) {
-	if (s == "local")
+	if (s == "local") {
 		return SrcType::Local;
-	if (s == "git")
+	}
+	if (s == "git") {
 		return SrcType::Git;
-	if (s == "registry")
+	}
+	if (s == "registry") {
 		return SrcType::Regsirty;
-	if (s == "archive")
+	}
+	if (s == "archive") {
 		return SrcType::Archive;
-	if (s == "folder")
+	}
+	if (s == "folder") {
 		return SrcType::Folder;
+	}
 
 	throw LockfileError("Uknown packages[].type: " + s,
 						LockfileErrorCode::INVALID_VALUE);
 }
 
 std::optional<std::unordered_map<std::string, Package>>
-LockfileParser::parse_packages() {
+LockfileProcessor::parse_packages() {
 	auto *arr = tbl_["packages"].as_array();
 	if (!arr) {
 		return std::nullopt;
@@ -262,7 +297,7 @@ LockfileParser::parse_packages() {
 	return packages;
 }
 
-void LockfileParser::parse() {
+void LockfileProcessor::parse() {
 	// parse lockfile table
 	auto t = tbl_["lockfile"];
 	if (!t.is_table()) {
@@ -270,6 +305,7 @@ void LockfileParser::parse() {
 			std::string("Essential table `lockfile` is missing."),
 			LockfileErrorCode::TABLE_MISSING);
 	}
+
 	if (auto n = t["schema"].value<std::int64_t>())
 		lockfile_.schema = *n;
 	else
@@ -280,8 +316,76 @@ void LockfileParser::parse() {
 
 	lockfile_.packages = parse_packages();
 	lockfile_.project = parse_project();
+
+	parsed_ = true;
 }
 
-const std::int64_t LockfileParser::get_schema() const noexcept {
+const std::int64_t LockfileProcessor::get_schema() const noexcept {
 	return lockfile_.schema;
+}
+
+// may throw ifstream::failure
+void LockfileProcessor::write_file(std::string s) {
+	std::ofstream out{filepath_, std::ios::binary};
+	if (!out) {
+		throw std::runtime_error("open failed: " + filepath_);
+	}
+
+	out.write(s.data(), static_cast<std::streamsize>(s.size()));
+
+	if (!out) {
+		throw std::runtime_error("write failed: " + filepath_);
+	}
+}
+
+/*
+ * Read schema if present, check it for errors, write to lockfile.
+ */
+void LockfileProcessor::write_template() {
+	LOG_INFO("Writing lockfile from schema.");
+	if (!schema_) {
+		write_file(basic_schema);
+		LOG_INFO("Successfully wrote basic schema.");
+		return;
+	}
+
+	std::string content{};
+	try {
+		std::string file_name = std::string{SCHEMA_DIR} +
+								std::to_string(schema_) + std::string{".toml"};
+
+		std::ifstream schema_file{file_name};
+		auto file_size = std::filesystem::file_size(file_name);
+
+		content.resize(file_size, 0);
+
+		schema_file.read(&content[0], file_size);
+	} catch (const std::ifstream::failure &e) {
+		LOG_ERROR("Could not read schema.");
+		throw LockfileError("Error reading schema " + std::to_string(schema_) +
+								" :" + e.what(),
+							LockfileErrorCode::FILE_NOT_FOUND);
+	}
+
+	// try parsing to check if schema is correct
+	try {
+		toml::table tbl = toml::parse(content);
+		try {
+			parse();
+		} catch (const LockfileError &err) {
+			LOG_ERROR("Incorrect schema.");
+			throw LockfileError("Error parsing schema toml of schema " +
+									std::to_string(schema_) + " : " +
+									err.what(),
+								LockfileErrorCode::INVAL_SCHEMA);
+		}
+	} catch (const toml::parse_error &err) {
+		LOG_ERROR("Incorrect schema.");
+		throw LockfileError("Error parsing schema toml of schema " +
+								std::to_string(schema_) + " : " + err.what(),
+							LockfileErrorCode::TOML_PARSE_ERROR);
+	}
+
+	write_file(content);
+	LOG_INFO("Successfully wrote new lockfile from schema");
 }

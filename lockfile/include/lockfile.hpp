@@ -9,6 +9,13 @@
 
 #include "lockfile_structure.hpp"
 
+#ifndef SCHEMA_DIR
+#define SCHEMA_DIR "schemas/"
+#endif
+
+extern const std::string schema_template;
+
+namespace localpm::filesys {
 enum class LockfileErrorCode {
 	SUCCESS = 0,
 	UNKNOWN_ERROR = 1,
@@ -16,7 +23,9 @@ enum class LockfileErrorCode {
 	TOML_PARSE_ERROR = 3,
 	FIELD_MISSING = 4,
 	TABLE_MISSING = 5,
-	INVALID_VALUE = 6
+	INVALID_VALUE = 6,
+	FILE_ERROR = 7,
+	INVAL_SCHEMA = 9,
 };
 
 class LockfileError : public std::exception {
@@ -35,10 +44,12 @@ class LockfileError : public std::exception {
 	const LockfileErrorCode code() const noexcept { return code_; }
 };
 
-class LockfileParser {
+class LockfileProcessor {
   private:
 	std::string filepath_;
 	toml::table tbl_;
+	bool parsed_ = false;
+	size_t schema_;
 
 	Lockfile lockfile_ = Lockfile();
 
@@ -48,10 +59,14 @@ class LockfileParser {
 	Source parse_source(toml::table, SrcType);
 	Integrity parse_integrity(toml::table);
 	Dependency parse_dependency(toml::table);
-	void parse();
+	void get_table_from_file();
+	void write_file(std::string); // writes given string to filepathe_
 
   public:
-	LockfileParser(std::string filepath_);
+	LockfileProcessor(std::string &filepath_, size_t schema = 0);
+
+	void parse();
+	void write_template();
 
 	const std::vector<Package> &get_packages();
 	const Compiler &get_compiler();
@@ -59,3 +74,4 @@ class LockfileParser {
 	const std::int64_t get_schema() const noexcept;
 	void debug_print();
 };
+} // namespace localpm::filesys

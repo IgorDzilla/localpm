@@ -1,39 +1,52 @@
-
 #pragma once
 #include "registry.hpp"
 #include <CLI/CLI.hpp>
 #include <filesystem>
 #include <iostream>
+//--- include lockfile --
+#include "lockfile.hpp"
+#include "logger/logger.hpp"
 
 namespace localpm::cli {
 
 class InitCommand : public Command {
-public:
-  std::string name() const override { return "init"; }
-  std::string description() const override {
-    return "Инициализация репозитория локальных пакетов";
-  }
+  public:
+	std::string name() const override { return "init"; }
+	std::string description() const override {
+		return "initialize project at given directory (. by default)";
+	}
 
-  void configure(CLI::App &sub) override {
-    sub.add_option("-d,--dir", dir_, "Каталог для инициализации")
-        ->default_val(".");
-    sub.add_flag("--force", force_, "Перезаписать существующие файлы");
-  }
+	void configure(CLI::App &sub) override {
 
-  int run() override {
-    namespace fs = std::filesystem;
-    fs::path root = dir_;
-    // ... здесь создаём структуру каталогов, конфиг и т.п.
-    std::cout << "Initialized LocalPM repo at " << fs::absolute(root) << "\n";
-    return 0;
-  }
+		sub.add_option("dir", dir_, "init dir")->default_val(".");
+		sub.add_flag("--force", force_, "overwrite project files");
+	}
 
-private:
-  std::string dir_ = ".";
-  bool force_ = false;
+	int run() override {
+		bool lockfile_exists = false;
+		if (FILE *fp = fopen("lockfile.toml", "r")) {
+			lockfile_exists = true;
+		}
+
+		if (lockfile_exists && !force_) {
+			return 0;
+		}
+
+		namespace fs = std::filesystem;
+
+		fs::path root = dir_;
+		std::cout << "Initialized LocalPM project at " << fs::absolute(root)
+				  << "\n";
+		return 0;
+	}
+
+  private:
+	std::string dir_ = ".";
+	bool force_ = false;
 };
 
 } // namespace localpm::cli
 
 inline const bool registered_init =
-    localpm::cli::CommandRegistry::instance().register_type<localpm::cli::InitCommand>();
+	localpm::cli::CommandRegistry::instance()
+		.register_type<localpm::cli::InitCommand>();

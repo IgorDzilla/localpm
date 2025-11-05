@@ -10,7 +10,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CC_DIRS
   "${CMAKE_SOURCE_DIR}"
   "${CMAKE_SOURCE_DIR}/cli"
+  "${CMAKE_SOURCE_DIR}/cli/include"
   "${CMAKE_SOURCE_DIR}/lockfile"
+  "${CMAKE_SOURCE_DIR}/lockfile/include"
 )
 
 add_custom_target(cc-symlinks ALL
@@ -27,6 +29,27 @@ foreach(dir IN LISTS CC_DIRS)
     )
 endforeach()
 # --- compile commands ---
+
+# --- Logger --
+
+include(FetchContent)
+
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG v1.14.1 # или актуальную
+)
+FetchContent_MakeAvailable(spdlog) # даст таргет spdlog::spdlog
+
+add_library(project_logging INTERFACE)
+target_link_libraries(project_logging INTERFACE spdlog::spdlog)
+target_include_directories(project_logging INTERFACE
+  ${CMAKE_SOURCE_DIR}/src/include
+)
+
+target_compile_definitions(project_logging INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
+# --- Logger ---
+
 
 # Output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")

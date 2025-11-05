@@ -1,5 +1,5 @@
 [lockfile]
-schema = 1
+schema = 0
 
 [project]
 name = "demo"
