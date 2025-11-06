@@ -1,6 +1,6 @@
 #include "lockfile.hpp"
 #include "lockfile_structure.hpp"
-#include "logger/logger.hpp"
+#include "logger/logger.h"
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -15,8 +15,9 @@ using namespace localpm::filesys;
 
 const std::string schema_template = std::string{"schema"};
 
-const std::string basic_schema = std::string{
-	R"SCHEMA([lockfile]\nschema = 0\n\n[project]\nname = <name>n\nversion = "0.1.0"\n\n[project.compiler]\ncc = "g++17")SCHEMA"};
+const std::string basic_schema =
+	std::string{"[lockfile]\nschema = 0\n\n[project]\nname = <name>n\nversion "
+				"= \"0.1.0\"\n\n[project.compiler]\ncc = \"g++17\""};
 
 LockfileProcessor ::LockfileProcessor(std::string &filepath, size_t schema)
 	: filepath_(filepath), schema_(schema) {

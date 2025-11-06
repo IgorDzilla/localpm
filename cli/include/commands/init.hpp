@@ -5,7 +5,7 @@
 #include <iostream>
 //--- include lockfile --
 #include "lockfile.hpp"
-#include "logger/logger.hpp"
+#include "logger/logger.h"
 
 namespace localpm::cli {
 
@@ -58,7 +58,7 @@ class InitCommand : public Command {
 	bool force_ = false;
 
 	std::string create_filepath(std::string &dir) {
-		if (dir_.ends_with("/")) {
+		if (!dir.empty() && dir.back() == '/') {
 			return dir + "lockfile.toml";
 		}
 		return dir + "/" + "lockfile.toml";
