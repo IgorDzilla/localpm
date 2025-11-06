@@ -97,14 +97,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm/cli//CMakeFiles/progress.marks
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/all
+	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm/tests//CMakeFiles/progress.marks
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/clean
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/clean
 .PHONY : clean
 
 # The main clean target
@@ -113,12 +113,12 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
@@ -135,7 +135,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... cli"
 .PHONY : help
 
 

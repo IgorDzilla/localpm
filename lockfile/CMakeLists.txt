@@ -24,6 +24,7 @@ target_include_directories(lockfile PUBLIC
 )
 
 target_link_libraries(lockfile PUBLIC
+    spdlog::spdlog
     tomlplusplus::tomlplusplus
 )
 

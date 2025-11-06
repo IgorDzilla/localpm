@@ -35,4 +35,4 @@ target_link_libraries(cli INTERFACE
     lockfile
 )
 
-target_compile_features(cli INTERFACE cxx_std_20)
+target_compile_features(cli INTERFACE cxx_std_17)

@@ -97,14 +97,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm/cli//CMakeFiles/progress.marks
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/all
+	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm/apps//CMakeFiles/progress.marks
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 apps/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/clean
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 apps/clean
 .PHONY : clean
 
 # The main clean target
@@ -113,18 +113,56 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 apps/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 apps/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
 	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+# Convenience name for target.
+apps/CMakeFiles/localpm.dir/rule:
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 apps/CMakeFiles/localpm.dir/rule
+.PHONY : apps/CMakeFiles/localpm.dir/rule
+
+# Convenience name for target.
+localpm: apps/CMakeFiles/localpm.dir/rule
+.PHONY : localpm
+
+# fast build rule for target.
+localpm/fast:
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f apps/CMakeFiles/localpm.dir/build.make apps/CMakeFiles/localpm.dir/build
+.PHONY : localpm/fast
+
+main.o: main.cpp.o
+.PHONY : main.o
+
+# target to build an object file
+main.cpp.o:
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f apps/CMakeFiles/localpm.dir/build.make apps/CMakeFiles/localpm.dir/main.cpp.o
+.PHONY : main.cpp.o
+
+main.i: main.cpp.i
+.PHONY : main.i
+
+# target to preprocess a source file
+main.cpp.i:
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f apps/CMakeFiles/localpm.dir/build.make apps/CMakeFiles/localpm.dir/main.cpp.i
+.PHONY : main.cpp.i
+
+main.s: main.cpp.s
+.PHONY : main.s
+
+# target to generate assembly for a file
+main.cpp.s:
+	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f apps/CMakeFiles/localpm.dir/build.make apps/CMakeFiles/localpm.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -135,7 +173,10 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... cli"
+	@echo "... localpm"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 .PHONY : help
 
 

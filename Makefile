@@ -97,14 +97,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm/cli//CMakeFiles/progress.marks
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles /Users/kozelskijigor/Programming/localpm//CMakeFiles/progress.marks
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/kozelskijigor/Programming/localpm/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/clean
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clean
 .PHONY : clean
 
 # The main clean target
@@ -113,18 +113,96 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/kozelskijigor/Programming/localpm && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli/preinstall
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+#=============================================================================
+# Target rules for targets named cc-symlinks
+
+# Build rule for target.
+cc-symlinks: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cc-symlinks
+.PHONY : cc-symlinks
+
+# fast build rule for target.
+cc-symlinks/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cc-symlinks.dir/build.make CMakeFiles/cc-symlinks.dir/build
+.PHONY : cc-symlinks/fast
+
+#=============================================================================
+# Target rules for targets named spdlog
+
+# Build rule for target.
+spdlog: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 spdlog
+.PHONY : spdlog
+
+# fast build rule for target.
+spdlog/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/spdlog-build/CMakeFiles/spdlog.dir/build.make _deps/spdlog-build/CMakeFiles/spdlog.dir/build
+.PHONY : spdlog/fast
+
+#=============================================================================
+# Target rules for targets named lockfile
+
+# Build rule for target.
+lockfile: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 lockfile
+.PHONY : lockfile
+
+# fast build rule for target.
+lockfile/fast:
+	$(MAKE) $(MAKESILENT) -f lockfile/CMakeFiles/lockfile.dir/build.make lockfile/CMakeFiles/lockfile.dir/build
+.PHONY : lockfile/fast
+
+#=============================================================================
+# Target rules for targets named cli
+
+# Build rule for target.
+cli: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cli
+.PHONY : cli
+
+# fast build rule for target.
+cli/fast:
+	$(MAKE) $(MAKESILENT) -f cli/CMakeFiles/cli.dir/build.make cli/CMakeFiles/cli.dir/build
+.PHONY : cli/fast
+
+#=============================================================================
+# Target rules for targets named CLI11
+
+# Build rule for target.
+CLI11: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CLI11
+.PHONY : CLI11
+
+# fast build rule for target.
+CLI11/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/cli11-build/src/CMakeFiles/CLI11.dir/build.make _deps/cli11-build/src/CMakeFiles/CLI11.dir/build
+.PHONY : CLI11/fast
+
+#=============================================================================
+# Target rules for targets named localpm
+
+# Build rule for target.
+localpm: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 localpm
+.PHONY : localpm
+
+# fast build rule for target.
+localpm/fast:
+	$(MAKE) $(MAKESILENT) -f apps/CMakeFiles/localpm.dir/build.make apps/CMakeFiles/localpm.dir/build
+.PHONY : localpm/fast
 
 # Help Target
 help:
@@ -135,7 +213,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
+	@echo "... cc-symlinks"
+	@echo "... CLI11"
 	@echo "... cli"
+	@echo "... localpm"
+	@echo "... lockfile"
+	@echo "... spdlog"
 .PHONY : help
 
 
@@ -147,6 +230,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/kozelskijigor/Programming/localpm && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

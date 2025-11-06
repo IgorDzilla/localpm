@@ -1,11 +1,11 @@
 #pragma once
 
-#include "tomlplusplus/toml.hpp"
 #include <cstdint>
 #include <exception>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <toml++/toml.hpp>
 
 #include "lockfile_structure.hpp"
 
