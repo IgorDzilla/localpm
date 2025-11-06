@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
 	} catch (const CLI::ParseError &e) {
 		return app.exit(e);
-	} catch (const LockfileError &e) {
+	} catch (const localpm::filesys::LockfileError &e) {
 		std::cerr << "Lockfile error: " << e.what() << "\n";
 		return 2;
 	} catch (const std::exception &e) {

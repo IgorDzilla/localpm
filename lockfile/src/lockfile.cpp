@@ -15,15 +15,8 @@ using namespace localpm::filesys;
 
 const std::string schema_template = std::string{"schema"};
 
-const std::string basic_schema = std::string{R"SCHEMA([lockfile]
-													  schema = 0
-													  
-													  [project]
-													  name = <name>
-	                                                  version = "0.1.0"
-
-													  [project.compiler]
-													  cc = "g++17")SCHEMA"};
+const std::string basic_schema = std::string{
+	R"SCHEMA([lockfile]\nschema = 0\n\n[project]\nname = <name>n\nversion = "0.1.0"\n\n[project.compiler]\ncc = "g++17")SCHEMA"};
 
 LockfileProcessor ::LockfileProcessor(std::string &filepath, size_t schema)
 	: filepath_(filepath), schema_(schema) {

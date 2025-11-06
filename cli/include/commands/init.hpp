@@ -17,32 +17,52 @@ class InitCommand : public Command {
 	}
 
 	void configure(CLI::App &sub) override {
-
 		sub.add_option("dir", dir_, "init dir")->default_val(".");
+		sub.add_option("--schema", schema_, "lockfile schemal")->default_val(0);
 		sub.add_flag("--force", force_, "overwrite project files");
 	}
 
 	int run() override {
 		bool lockfile_exists = false;
-		if (FILE *fp = fopen("lockfile.toml", "r")) {
+		std::string filepath = create_filepath(dir_);
+
+		if (FILE *fp = fopen(filepath.c_str(), "r")) {
 			lockfile_exists = true;
 		}
 
 		if (lockfile_exists && !force_) {
+			LOG_INFO("Lockfile already exists.");
 			return 0;
 		}
 
-		namespace fs = std::filesystem;
+		try {
+			if (std::filesystem::create_directories(dir_)) {
+				LOG_INFO("Created project root dir.");
+			}
 
-		fs::path root = dir_;
-		std::cout << "Initialized LocalPM project at " << fs::absolute(root)
-				  << "\n";
+			localpm::filesys::LockfileProcessor processor(filepath, schema_);
+			processor.write_template();
+
+		} catch (const std::filesystem::filesystem_error &err) {
+			throw err;
+		}
+
+		LOG_INFO("Initialized new project at " + dir_ +
+				 "with lockfile schema " + std::to_string(schema_));
 		return 0;
 	}
 
   private:
 	std::string dir_ = ".";
+	size_t schema_ = 0;
 	bool force_ = false;
+
+	std::string create_filepath(std::string &dir) {
+		if (dir_.ends_with("/")) {
+			return dir + "lockfile.toml";
+		}
+		return dir + "/" + "lockfile.toml";
+	}
 };
 
 } // namespace localpm::cli

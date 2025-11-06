@@ -2,7 +2,7 @@
 
 int main(void) {
 	std::cout << "TEST IN PROGRESS\n";
-	LockfileParser parser("sample.toml");
+	localpm::filesys::LockfileProcessor parser("sample.toml");
 
 	return 0;
 }
