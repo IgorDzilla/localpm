@@ -2,6 +2,7 @@
 
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #ifndef DB_PATH
@@ -30,21 +31,26 @@ class DataBaseError : public std::exception {
 
   public:
 	DataBaseError(std::string msg, DataBaseErrorCode code)
-		: msg(msg), code(code) {};
+		: msg(msg), code(code) {}
+	DataBaseError(const char *msg_, const char *exception_msg,
+				  DataBaseErrorCode code)
+		: code(code) {
+		msg = std::string(msg_) + ":\t" + std::string(exception_msg);
+	}
 	const char *what() const noexcept override { return msg.c_str(); }
 };
 
 struct Package {
 	size_t id;
-	std::string name;
-	std::string version;
-	std::string pkg_namespace;
-	std::string path;
-	std::string src_type;
-	std::string pkg_type;
-	std::string created_at;
-	std::string updated_at;
-	bool is_deleted;
+	std::string name = {};
+	std::string version = {};
+	std::string pkg_namespace = {};
+	std::string path = {};
+	std::string src_type = {};
+	std::string pkg_type = {};
+	std::string created_at = {};
+	std::string updated_at = {};
+	bool deleted;
 };
 
 class DataBase {
@@ -55,8 +61,8 @@ class DataBase {
 
   public:
 	DataBase(std::string &path);
-	auto search_package(std::string name = {}, std::string version = "latest")
-		-> std::vector<Package>;
+	auto search_package(std::string name = {}, std::string version = {})
+		-> std::unordered_map<std::string, Package>;
 };
 
 } // namespace localpm::manager::database
