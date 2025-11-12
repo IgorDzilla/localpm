@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -22,6 +23,8 @@ namespace localpm::manager::database {
 enum class DataBaseErrorCode {
 	QUERY_FILE_NOT_FOUND,
 	QUERY_FAILURE,
+	INVAL_PKG,
+	PKG_EXISTS,
 };
 
 class DataBaseError : public std::exception {
@@ -61,8 +64,11 @@ class DataBase {
 
   public:
 	DataBase(std::string &path);
-	auto search_package(std::string name = {}, std::string version = {})
+
+	auto search_packages(std::string name = {}, std::string version = {})
 		-> std::unordered_map<std::string, Package>;
+
+	void insert_package(Package &pkg, std::filesystem::path &path);
 };
 
 } // namespace localpm::manager::database
