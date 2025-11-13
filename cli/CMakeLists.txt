@@ -19,11 +19,11 @@ target_include_directories(cli
         INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/src/include
-        ${CMAKE_SOURCE_DIR}/lockfile
+        ${CMAKE_SOURCE_DIR}/toml-processors
 )
 
 target_link_libraries(cli INTERFACE
         CLI11::CLI11
         project_logging
-        lockfile
+        toml-processors
 )

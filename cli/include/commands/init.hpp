@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <iostream>
 //--- include lockfile --
-#include "lockfile.hpp"
 #include "logger/logger.h"
+#include <lockfile/lockfile.hpp>
 
 namespace localpm::cli {
 

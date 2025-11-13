@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
-project(localpm2)
+project(localpm)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_subdirectory(lockfile)
+add_subdirectory(toml-processors)
 add_subdirectory(cli)
 
 include(FetchContent)
@@ -29,22 +29,24 @@ target_include_directories(project_logging INTERFACE
         ${CMAKE_SOURCE_DIR}/src/include
 )
 
-add_executable(localpm2
+add_executable(localpm
         src/main.cpp
         src/include/logger/logger.h
 )
 
 # Подключаем логгер и include-пути к бинарю
-target_link_libraries(localpm2 PRIVATE
+target_link_libraries(localpm PRIVATE
         project_logging
         CLI11::CLI11
         cli
+        toml-processors
+        tomlplusplus::tomlplusplus
 )
 
-target_include_directories(localpm2 PRIVATE
+target_include_directories(localpm PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/include/
-        ${CMAKE_SOURCE_DIR}/lockfile
+        ${CMAKE_SOURCE_DIR}/toml-processors/include
         ${CMAKE_SOURCE_DIR}/cli
 
 )
