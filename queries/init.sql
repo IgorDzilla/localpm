@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS dependencies (
   package_id    INTEGER NOT NULL,
   dep_namespace TEXT    NOT NULL,  -- если не указан, берётся "default"
   dep_name      TEXT    NOT NULL,
-  constraint    TEXT,              -- строка спецификации версий
+  ver_constraint    TEXT,              -- строка спецификации версий
   optional      INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY(package_id) REFERENCES packages(id) ON DELETE CASCADE
 );

@@ -18,7 +18,7 @@
 #define INIT_QUERY "init.sql"
 #endif // !INIT_QUERY
 
-namespace localpm::manager::database {
+namespace localpm::database {
 
 enum class DataBaseErrorCode {
 	QUERY_FILE_NOT_FOUND,
@@ -43,6 +43,15 @@ class DataBaseError : public std::exception {
 	const char *what() const noexcept override { return msg.c_str(); }
 };
 
+struct Dependency {
+	std::string dep_namespace; // "default" если пусто
+	std::string dep_name;
+	std::string ver_constraint; // может быть пустой
+	bool optional = false;
+
+	Dependency() = default;
+};
+
 struct Package {
 	size_t id;
 	std::string name = {};
@@ -54,21 +63,26 @@ struct Package {
 	std::string created_at = {};
 	std::string updated_at = {};
 	bool deleted;
+
+	// not in in table, but important
+	std::vector<Dependency> deps = {};
+
+	Package() = default;
 };
 
 class DataBase {
   private:
 	SQLite::Database db;
 	std::string path;
-	void init_db();
 
   public:
 	DataBase(std::string &path);
 
+	void init_db();
 	auto search_packages(std::string name = {}, std::string version = {})
 		-> std::unordered_map<std::string, Package>;
 
-	void insert_package(Package &pkg, std::filesystem::path &path);
+	void upsert_package(Package &pkg);
 };
 
-} // namespace localpm::manager::database
+} // namespace localpm::database

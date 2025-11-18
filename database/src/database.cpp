@@ -5,7 +5,7 @@
 #include <sstream>
 #include <unordered_map>
 
-namespace localpm::manager::database {
+namespace localpm::database {
 
 // --- util ---
 static std::string assemble_path(std::string path, std::string filename) {
@@ -16,12 +16,19 @@ static std::string assemble_path(std::string path, std::string filename) {
 	return path + filename;
 }
 
-DataBase::DataBase(std::string &path_par) : path(path_par), db(path_par) {}
+DataBase::DataBase(std::string &path_par)
+	: path(path_par), db((std::filesystem::create_directories(
+							  std::filesystem::path(path_par)
+								  .parent_path()), // гарантируем каталог
+						  path_par),
+						 SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {}
 
 void DataBase::init_db() {
 	std::string query_path =
 		assemble_path(std::string(DB_QUERY_FOLDER), std::string(INIT_QUERY));
 	std::fstream input(query_path);
+
+	std::cerr << query_path << std::endl;
 
 	if (!input) {
 		throw DataBaseError("Initialization query file not found",
@@ -32,6 +39,7 @@ void DataBase::init_db() {
 	buffer << input.rdbuf();
 	try {
 		db.exec(buffer.str());
+		db.exec("PRAGMA foreign_keys=ON;");
 	} catch (std::exception &e) {
 		std::string err_str =
 			std::string("Query execution failed: ") + std::string(e.what());
@@ -44,7 +52,7 @@ void DataBase::init_db() {
  * TODO: search should be better, now only equality is checked.
  */
 std::unordered_map<std::string, Package>
-DataBase::search_package(std::string name, std::string version) {
+DataBase::search_packages(std::string name, std::string version) {
 	std::string query_string{"SELECT * FROM packages"};
 	if (!name.empty() && !version.empty()) {
 		query_string +=
@@ -89,7 +97,7 @@ DataBase::search_package(std::string name, std::string version) {
 	return pkg_map;
 }
 
-void DataBase::insert_package(Package &pkg, std::filesystem::path &path) {
+void DataBase::upsert_package(Package &pkg) {
 	// 1) Валидация входных данных
 	if (pkg.name.empty() || pkg.version.empty() || pkg.pkg_namespace.empty() ||
 		pkg.pkg_type.empty() || pkg.src_type.empty()) {
@@ -102,7 +110,6 @@ void DataBase::insert_package(Package &pkg, std::filesystem::path &path) {
 	SQLite::Transaction txn(db);
 
 	// 3) UPSERT в packages c RETURNING id
-	//    deleted=FALSE — «разархивируем» запись, если была помечена удалённой
 	SQLite::Statement upsertPkg(db, R"SQL(
         INSERT INTO packages
             (namespace, name, version, path, source_type, pkg_type, updated_at, deleted)
@@ -120,30 +127,38 @@ void DataBase::insert_package(Package &pkg, std::filesystem::path &path) {
 	upsertPkg.bind(":ns", pkg.pkg_namespace);
 	upsertPkg.bind(":name", pkg.name);
 	upsertPkg.bind(":ver", pkg.version);
-	upsertPkg.bind(":path", path.u8string()); // безопасно для non-ASCII
+	upsertPkg.bind(":path", pkg.path);
 	upsertPkg.bind(":src", pkg.src_type);
 	upsertPkg.bind(":pkg", pkg.pkg_type);
 
 	int64_t packageId = -1;
 	if (upsertPkg.executeStep()) {
 		packageId = upsertPkg.getColumn(0).getInt64();
+		// На всякий случай дочитываем все возможные строки из RETURNING
+		while (upsertPkg.executeStep()) { /* consume */
+		}
 	} else {
+		upsertPkg.reset();
+		upsertPkg.clearBindings();
 		throw DataBaseError("Failed to upsert package (no id returned)",
-							DataBaseErrorCode::DB_ERROR);
+							DataBaseErrorCode::QUERY_FAILURE);
 	}
+	// ВАЖНО: закрываем курсор до любых последующих операций/commit
+	upsertPkg.reset();
+	upsertPkg.clearBindings();
 
-	// 4) Пересобираем зависимости: сначала удаляем, потом вставляем
+	// 4) Пересбор зависимостей: сначала очищаем, затем вставляем актуальные
 	{
 		SQLite::Statement delDeps(
 			db, "DELETE FROM dependencies WHERE package_id = :pid");
 		delDeps.bind(":pid", packageId);
-		delDeps.exec();
+		delDeps.exec(); // exec() не оставляет открытых курсоров
 	}
 
 	if (!pkg.deps.empty()) {
 		SQLite::Statement insDep(db, R"SQL(
             INSERT INTO dependencies
-                (package_id, dep_namespace, dep_name, constraint, optional)
+                (package_id, dep_namespace, dep_name, "constraint", optional)
             VALUES
                 (:pid, :dns, :dname, :cstr, :opt)
         )SQL");
@@ -153,15 +168,12 @@ void DataBase::insert_package(Package &pkg, std::filesystem::path &path) {
 			insDep.bind(":dns", d.dep_namespace.empty() ? std::string("default")
 														: d.dep_namespace);
 			insDep.bind(":dname", d.dep_name);
-			// Поле называется "constraint" — допустимо в SQLite, но это
-			// зарезервированное слово в общем SQL. Если когда-то переедете на
-			// другую СУБД, лучше переименовать, напр. "ver_constraint".
 			if (d.ver_constraint.empty())
-				insDep.bind(":cstr"); // bind NULL
+				insDep.bind(":cstr"); // NULL
 			else
 				insDep.bind(":cstr", d.ver_constraint);
+			insDep.bind(":opt", static_cast<int>(d.optional)); // 0/1
 
-			insDep.bind(":opt", static_cast<int>(d.optional));
 			insDep.exec();
 			insDep.reset();
 			insDep.clearBindings();
@@ -171,4 +183,5 @@ void DataBase::insert_package(Package &pkg, std::filesystem::path &path) {
 	// 5) Коммит
 	txn.commit();
 }
-} // namespace localpm::manager::database
+
+} // namespace localpm::database
