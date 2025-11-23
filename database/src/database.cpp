@@ -1,16 +1,19 @@
 #include "database.hpp"
 #include "logger/logger.h"
 #include <SQLiteCpp/Statement.h>
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <semver/semver.hpp>
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-namespace localpm::database {
+namespace localpm::database{
 
 // --- util ---
 static std::string assemble_path(std::string path, std::string filename) {
@@ -52,56 +55,6 @@ void DataBase::init_db() {
 	}
 }
 
-/*
- * Executes select query.
- * TODO: search should be better, now only equality is checked.
- */
-// std::unordered_map<std::string, Package>
-// DataBase::search_packages(std::string name, std::string version) {
-// 	std::string query_string{"SELECT * FROM packages"};
-// 	if (!name.empty() && !version.empty()) {
-// 		query_string +=
-// 			"WHERE name = \'" + name + "\' AND  version = \'" + version + "\'";
-// 	} else if (!name.empty()) {
-// 		query_string += "WHERE name = \'" + name + "\'";
-// 	} else if (!version.empty()) {
-//
-// 		query_string += "WHERE version = \'" + version + "\'";
-// 	}
-//
-// 	query_string += ";";
-//
-// 	std::cout << "Query string:\t" << query_string << std::endl;
-//
-// 	SQLite::Statement query(db, query_string);
-// 	std::unordered_map<std::string, Package> pkg_map;
-//
-// 	try {
-// 		while (query.executeStep()) {
-// 			Package pkg;
-//
-// 			pkg.id = static_cast<int>(query.getColumn(0));
-// 			pkg.name = static_cast<const char *>(query.getColumn(1));
-// 			pkg.version = static_cast<const char *>(query.getColumn(1));
-// 			pkg.pkg_namespace = static_cast<const char *>(query.getColumn(1));
-// 			pkg.path = static_cast<const char *>(query.getColumn(1));
-// 			pkg.src_type = static_cast<const char *>(query.getColumn(1));
-// 			pkg.pkg_type = static_cast<const char *>(query.getColumn(1));
-// 			pkg.created_at = static_cast<const char *>(query.getColumn(1));
-// 			pkg.updated_at = static_cast<const char *>(query.getColumn(1));
-// 			pkg.deleted = static_cast<int>(query.getColumn(
-// 				1)); // who the fuck knows how to convert this shit
-//
-// 			pkg_map[pkg.name] = pkg;
-// 		}
-// 	} catch (std::exception &e) {
-// 		throw DataBaseError("Query execution failed", e.what(),
-// 							DataBaseErrorCode::QUERY_FAILURE);
-// 	}
-//
-// 	return pkg_map;
-// }
-
 std::vector<Package>
 DataBase::search_package_versions(std::string ns, std::string name,
 								  std::string min_ver_str) {
@@ -119,7 +72,7 @@ DataBase::search_package_versions(std::string ns, std::string name,
 	std::optional<semver::version> min_ver = std::nullopt;
 
 	if (!min_ver_str.empty()) {
-		*min_ver = semver::version::parse(min_ver_str);
+		min_ver = semver::version::parse(min_ver_str);
 	}
 
 	while (query.executeStep()) {
@@ -134,8 +87,8 @@ DataBase::search_package_versions(std::string ns, std::string name,
 			continue;
 		}
 
-		if (min_ver) {
-			if (ver < *min_ver) {
+		if (min_ver.has_value()) {
+			if (ver < min_ver.value()) {
 				continue;
 			}
 		}
@@ -162,9 +115,9 @@ DataBase::search_package_versions(std::string ns, std::string name,
 			  });
 
 	std::vector<Package> result;
-	result.reserve(sizeof(Package) * tmp_pkgs.size());
+	result.reserve(tmp_pkgs.size());
 
-	for (int i = 0; i < tmp_pkgs.size(); i++) {
+	for (std::size_t i = 0; i < tmp_pkgs.size(); i++) {
 		result.emplace_back(std::move(tmp_pkgs[i].second));
 	}
 
@@ -181,7 +134,7 @@ DataBase::search_packages(std::vector<std::string> namespaces,
 							"FROM packages "
 							"WHERE deleted = 0";
 	if (!namespaces.empty()) {
-		query_str += "AND namespace IN (";
+		query_str += " AND namespace IN (";
 		for (std::size_t i = 0; i < namespaces.size(); i++) {
 			if (i) {
 				query_str += ',';
@@ -191,8 +144,8 @@ DataBase::search_packages(std::vector<std::string> namespaces,
 		query_str += ')';
 	}
 
-	if (!namespaces.empty()) {
-		query_str += "AND name IN (";
+	if (!names.empty()) {
+		query_str += " AND name IN (";
 		for (std::size_t i = 0; i < names.size(); i++) {
 			if (i) {
 				query_str += ',';
@@ -218,6 +171,7 @@ DataBase::search_packages(std::vector<std::string> namespaces,
 	if (!min_version.empty()) {
 		try {
 			min_ver = semver::version::parse(min_version);
+			has_min_ver = true;
 		} catch (const std::exception &) {
 			LOG_WARN(std::string("Incorrect version string: ") + min_version);
 		}
@@ -253,8 +207,12 @@ DataBase::search_packages(std::vector<std::string> namespaces,
 			p.pkg_type      = stmt.getColumn("pkg_type").getString();
 			p.created_at    = stmt.getColumn("created_at").getInt64();
 			// clang-format on
+
+			result[p.name] = p;
 		}
 	}
+
+	return result;
 }
 
 void DataBase::upsert_package(Package &pkg) {
@@ -323,16 +281,18 @@ void DataBase::upsert_package(Package &pkg) {
                 (:pid, :dns, :dname, :cstr, :opt)
         )SQL");
 
-		for (const auto &d : pkg.deps) {
+		for (const auto &dependency : pkg.deps) {
 			insDep.bind(":pid", packageId);
-			insDep.bind(":dns", d.dep_namespace.empty() ? std::string("default")
-														: d.dep_namespace);
-			insDep.bind(":dname", d.dep_name);
-			if (d.ver_constraint.empty())
+			insDep.bind(":dns", dependency.dep_namespace.empty()
+									? std::string("default")
+									: dependency.dep_namespace);
+			insDep.bind(":dname", dependency.dep_name);
+			if (dependency.ver_constraint.empty()) {
 				insDep.bind(":cstr"); // NULL
-			else
-				insDep.bind(":cstr", d.ver_constraint);
-			insDep.bind(":opt", static_cast<int>(d.optional)); // 0/1
+			} else {
+				insDep.bind(":cstr", dependency.ver_constraint);
+			}
+			insDep.bind(":opt", static_cast<int>(dependency.optional)); // 0/1
 
 			insDep.exec();
 			insDep.reset();

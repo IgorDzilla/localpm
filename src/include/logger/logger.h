@@ -9,13 +9,16 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #ifndef CONSOLE_LOG
 #define CONSOLE_LOG 0
 #endif
 
-namespace project::log {
+namespace localpm {
+namespace log {
 
 // Вызывать один раз (например, в main)
 inline void init(std::string_view app_name = "localpm",
@@ -27,7 +30,8 @@ inline void init(std::string_view app_name = "localpm",
 	std::vector<spdlog::sink_ptr> sinks;
 
 	auto rotating = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-		std::string(logfile), 5 * 1024 * 1024, 3); // 5MB, 3 файла
+		std::string(logdir) + std::string(logfile), 5 * 1024 * 1024,
+		3); // 5MB, 3 файла
 	sinks.push_back(rotating);
 
 	if (CONSOLE_LOG) {
@@ -52,5 +56,6 @@ inline void init(std::string_view app_name = "localpm",
 #define LOG_ERROR(...) SPDLOG_ERROR(__VA_ARGS__)
 #define LOG_CRIT(...) SPDLOG_CRITICAL(__VA_ARGS__)
 
-} // namespace project::log
+} // namespace log
+} // namespace localpm
 #endif // LOCALPM2_LOGGER_H

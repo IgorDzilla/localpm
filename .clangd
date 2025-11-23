@@ -3,7 +3,7 @@ CompileFlags:
   # Где лежит compile_commands.json
   CompilationDatabase: build
   # Доп. флаги к тем, что в compile_commands.json (опционально)
-  Add: [-Wall, -Wextra, -Wpedantic]
+  Add: [-Wall, -Wextra, -Wpedantic, -std=c++17]
 # На случай, если для какого-то файла нет записи в compile_commands.json
 
 Index:
@@ -30,4 +30,3 @@ QueryDriver:
   - /usr/bin/clang*
   - /usr/bin/g++*
   - /usr/bin/gcc*
-
