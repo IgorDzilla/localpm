@@ -1,8 +1,13 @@
 #include "database.hpp"
+#include "logger/logger.h"
+#include <SQLiteCpp/Statement.h>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <semver/semver.hpp>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 
 namespace localpm::database {
@@ -51,50 +56,205 @@ void DataBase::init_db() {
  * Executes select query.
  * TODO: search should be better, now only equality is checked.
  */
-std::unordered_map<std::string, Package>
-DataBase::search_packages(std::string name, std::string version) {
-	std::string query_string{"SELECT * FROM packages"};
-	if (!name.empty() && !version.empty()) {
-		query_string +=
-			"WHERE name = \'" + name + "\' AND  version = \'" + version + "\'";
-	} else if (!name.empty()) {
-		query_string += "WHERE name = \'" + name + "\'";
-	} else if (!version.empty()) {
+// std::unordered_map<std::string, Package>
+// DataBase::search_packages(std::string name, std::string version) {
+// 	std::string query_string{"SELECT * FROM packages"};
+// 	if (!name.empty() && !version.empty()) {
+// 		query_string +=
+// 			"WHERE name = \'" + name + "\' AND  version = \'" + version + "\'";
+// 	} else if (!name.empty()) {
+// 		query_string += "WHERE name = \'" + name + "\'";
+// 	} else if (!version.empty()) {
+//
+// 		query_string += "WHERE version = \'" + version + "\'";
+// 	}
+//
+// 	query_string += ";";
+//
+// 	std::cout << "Query string:\t" << query_string << std::endl;
+//
+// 	SQLite::Statement query(db, query_string);
+// 	std::unordered_map<std::string, Package> pkg_map;
+//
+// 	try {
+// 		while (query.executeStep()) {
+// 			Package pkg;
+//
+// 			pkg.id = static_cast<int>(query.getColumn(0));
+// 			pkg.name = static_cast<const char *>(query.getColumn(1));
+// 			pkg.version = static_cast<const char *>(query.getColumn(1));
+// 			pkg.pkg_namespace = static_cast<const char *>(query.getColumn(1));
+// 			pkg.path = static_cast<const char *>(query.getColumn(1));
+// 			pkg.src_type = static_cast<const char *>(query.getColumn(1));
+// 			pkg.pkg_type = static_cast<const char *>(query.getColumn(1));
+// 			pkg.created_at = static_cast<const char *>(query.getColumn(1));
+// 			pkg.updated_at = static_cast<const char *>(query.getColumn(1));
+// 			pkg.deleted = static_cast<int>(query.getColumn(
+// 				1)); // who the fuck knows how to convert this shit
+//
+// 			pkg_map[pkg.name] = pkg;
+// 		}
+// 	} catch (std::exception &e) {
+// 		throw DataBaseError("Query execution failed", e.what(),
+// 							DataBaseErrorCode::QUERY_FAILURE);
+// 	}
+//
+// 	return pkg_map;
+// }
 
-		query_string += "WHERE version = \'" + version + "\'";
+std::vector<Package>
+DataBase::search_package_versions(std::string ns, std::string name,
+								  std::string min_ver_str) {
+	SQLite::Statement query(db,
+							"SELECT "
+							"  id, name, namespace, version, path, "
+							"  source_type, pkg_type, created_at, updated_at "
+							"FROM packages "
+							"WHERE namespace = ? AND name = ? AND deleted = 0");
+
+	query.bind(1, ns);
+	query.bind(2, name);
+
+	std::vector<std::pair<semver::version, Package>> tmp_pkgs;
+	std::optional<semver::version> min_ver = std::nullopt;
+
+	if (!min_ver_str.empty()) {
+		*min_ver = semver::version::parse(min_ver_str);
 	}
 
-	query_string += ";";
+	while (query.executeStep()) {
+		const std::string ver_str = query.getColumn("version").getString();
 
-	std::cout << "Query string:\t" << query_string << std::endl;
-
-	SQLite::Statement query(db, query_string);
-	std::unordered_map<std::string, Package> pkg_map;
-
-	try {
-		while (query.executeStep()) {
-			Package pkg;
-
-			pkg.id = static_cast<int>(query.getColumn(0));
-			pkg.name = static_cast<const char *>(query.getColumn(1));
-			pkg.version = static_cast<const char *>(query.getColumn(1));
-			pkg.pkg_namespace = static_cast<const char *>(query.getColumn(1));
-			pkg.path = static_cast<const char *>(query.getColumn(1));
-			pkg.src_type = static_cast<const char *>(query.getColumn(1));
-			pkg.pkg_type = static_cast<const char *>(query.getColumn(1));
-			pkg.created_at = static_cast<const char *>(query.getColumn(1));
-			pkg.updated_at = static_cast<const char *>(query.getColumn(1));
-			pkg.deleted = static_cast<int>(query.getColumn(
-				1)); // who the fuck knows how to convert this shit
-
-			pkg_map[pkg.name] = pkg;
+		semver::version ver;
+		try {
+			ver = semver::version::parse(ver_str);
+		} catch (const std::exception &e) {
+			LOG_WARN(std::string("Incorrect version \"") + ver_str +
+					 std::string("\" discovered in database"));
+			continue;
 		}
-	} catch (std::exception &e) {
-		throw DataBaseError("Query execution failed", e.what(),
-							DataBaseErrorCode::QUERY_FAILURE);
+
+		if (min_ver) {
+			if (ver < *min_ver) {
+				continue;
+			}
+		}
+
+		Package p;
+		// clang-format off
+		p.id          	= query.getColumn("id").getInt();
+        p.name        	= query.getColumn("name").getString();
+        p.pkg_namespace = query.getColumn("namespace").getString();
+        p.version       = ver_str;
+        p.path        	= query.getColumn("path").getString();
+        p.src_type    	= query.getColumn("source_type").getString();
+        p.pkg_type    	= query.getColumn("pkg_type").getString();
+        p.created_at  	= query.getColumn("created_at").getInt64();
+        p.updated_at  	= query.getColumn("updated_at").getInt64();
+		// clang-format on
+
+		tmp_pkgs.emplace_back(std::move(ver), std::move(p));
 	}
 
-	return pkg_map;
+	std::sort(tmp_pkgs.begin(), tmp_pkgs.end(),
+			  [](const auto &a, const auto &b) {
+				  return a.first > b.first; // убывание
+			  });
+
+	std::vector<Package> result;
+	result.reserve(sizeof(Package) * tmp_pkgs.size());
+
+	for (int i = 0; i < tmp_pkgs.size(); i++) {
+		result.emplace_back(std::move(tmp_pkgs[i].second));
+	}
+
+	return result;
+}
+
+std::unordered_map<std::string, Package>
+DataBase::search_packages(std::vector<std::string> namespaces,
+						  std::vector<std::string> names,
+						  std::string min_version) {
+	std::string query_str = "SELECT "
+							"  id, name, namespace, version, path, "
+							"  source_type, pkg_type, created_at, updated_at "
+							"FROM packages "
+							"WHERE deleted = 0";
+	if (!namespaces.empty()) {
+		query_str += "AND namespace IN (";
+		for (std::size_t i = 0; i < namespaces.size(); i++) {
+			if (i) {
+				query_str += ',';
+			}
+			query_str += '?';
+		}
+		query_str += ')';
+	}
+
+	if (!namespaces.empty()) {
+		query_str += "AND name IN (";
+		for (std::size_t i = 0; i < names.size(); i++) {
+			if (i) {
+				query_str += ',';
+			}
+			query_str += '?';
+		}
+		query_str += ')';
+	}
+
+	SQLite::Statement stmt(db, query_str);
+
+	int bind_index = 1;
+	for (const auto &ns : namespaces) {
+		stmt.bind(bind_index++, ns);
+	}
+
+	for (const auto &n : names) {
+		stmt.bind(bind_index++, n);
+	}
+
+	semver::version min_ver;
+	bool has_min_ver = false;
+	if (!min_version.empty()) {
+		try {
+			min_ver = semver::version::parse(min_version);
+		} catch (const std::exception &) {
+			LOG_WARN(std::string("Incorrect version string: ") + min_version);
+		}
+	}
+
+	std::unordered_map<std::string, Package> result;
+
+	while (stmt.executeStep()) {
+		const std::string ver_str = stmt.getColumn("version").getString();
+		const int id = stmt.getColumn("id").getInt();
+
+		if (has_min_ver) {
+			semver::version v;
+			try {
+				v = semver::version::parse(ver_str);
+			} catch (...) {
+				LOG_WARN(std::string("Incorrect version in database table "
+									 "packages with index :") +
+						 std::to_string(id));
+			}
+			if (v < min_ver) {
+				continue;
+			}
+
+			Package p;
+			// clang-format off
+			p.id            = id;
+			p.name          = stmt.getColumn("name").getString();
+			p.pkg_namespace = stmt.getColumn("namespace").getString();
+			p.version       = ver_str;
+			p.path          = stmt.getColumn("path").getString();
+			p.src_type      = stmt.getColumn("source_type").getString();
+			p.pkg_type      = stmt.getColumn("pkg_type").getString();
+			p.created_at    = stmt.getColumn("created_at").getInt64();
+			// clang-format on
+		}
+	}
 }
 
 void DataBase::upsert_package(Package &pkg) {

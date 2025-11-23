@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(lockfile)
 add_subdirectory(cli)
 add_subdirectory(database)
+add_subdirectory(storage)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -20,6 +21,19 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
   GIT_TAG v2.4.2)
 FetchContent_MakeAvailable(CLI11)
+
+FetchContent_Declare(
+  cpp-semver
+  GIT_REPOSITORY https://github.com/z4kn4fein/cpp-semver.git
+  GIT_TAG v0.4.0)
+FetchContent_MakeAvailable(cpp-semver)
+
+FetchContent_Declare(
+  SQLiteCpp
+  GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp.git
+  GIT_TAG 3.3.1)
+
+FetchContent_MakeAvailable(SQLiteCpp)
 
 add_library(project_logging INTERFACE)
 target_link_libraries(project_logging INTERFACE spdlog::spdlog)

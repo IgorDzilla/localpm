@@ -1,7 +1,9 @@
 #pragma once
 
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <cstdint>
 #include <filesystem>
+#include <semver/semver.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -54,18 +56,18 @@ struct Dependency {
 
 struct Package {
 	size_t id;
-	std::string name = {};
-	std::string version = {};
-	std::string pkg_namespace = {};
-	std::string path = {};
-	std::string src_type = {};
-	std::string pkg_type = {};
-	std::string created_at = {};
-	std::string updated_at = {};
+	std::string name;
+	std::string version;
+	std::string pkg_namespace;
+	std::string path;
+	std::string src_type;
+	std::string pkg_type;
+	std::int64_t created_at;
+	std::int64_t updated_at;
 	bool deleted;
 
 	// not in in table, but important
-	std::vector<Dependency> deps = {};
+	std::vector<Dependency> deps;
 
 	Package() = default;
 };
@@ -79,10 +81,14 @@ class DataBase {
 	DataBase(std::string &path);
 
 	void init_db();
-	auto search_packages(std::string name = {}, std::string version = {})
+	auto search_packages(std::vector<std::string> namespaces = {},
+						 std::vector<std::string> names = {},
+						 std::string min_version = {})
+
 		-> std::unordered_map<std::string, Package>;
+	auto search_package_versions(std::string ns, std::string name,
+								 std::string version) -> std::vector<Package>;
 
 	void upsert_package(Package &pkg);
 };
-
 } // namespace localpm::database
